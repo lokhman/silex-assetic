@@ -1,0 +1,21 @@
+{
+    "name": "lokhman/silex-assetic",
+    "type": "library",
+    "description": "Silex 2.0+ service provider for Assetic library",
+    "keywords": ["silex", "tools", "assetic"],
+    "license": "MIT",
+    "authors": [{
+        "name": "Alexander Lokhman",
+        "email": "alex.lokhman@gmail.com"
+    }],
+    "autoload": {
+        "psr-4": { "Lokhman\\Silex\\": "src/Silex" }
+    },
+    "require": {
+        "silex/silex": "~2.0",
+        "kriswallsmith/assetic": "^1.4"
+    },
+    "suggest": {
+        "lokhman/silex-console": "For using console commands to dump assets"
+    }
+}
