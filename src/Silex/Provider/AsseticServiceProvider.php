@@ -41,6 +41,7 @@ use Assetic\Extension\Twig\AsseticExtension;
 use Assetic\Extension\Twig\TwigFormulaLoader;
 use Assetic\Extension\Twig\TwigResource;
 use Assetic\Asset\AssetCache;
+use Assetic\Asset\AssetCollection;
 use Assetic\Cache\FilesystemCache;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\Response;
@@ -83,12 +84,14 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
             $options = array_replace($defaults, $app['assetic.options']);
             $app['assetic.options'] = $options;
 
+            // register asset factory, filter and asset managers
             $factory = new AssetFactory($options['input_dir'], $app['debug']);
             $factory->setFilterManager($app['assetic.filter_manager']);
 
             $manager = new AssetManager();
             $factory->setAssetManager($manager);
 
+            // set static assets from configuration
             foreach ($options['assets'] as $name => $formula) {
                 $manager->set($name, $factory->createAsset(
                     isset($formula['inputs']) ? $formula['inputs'] : [],
@@ -97,8 +100,6 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
                 ));
             }
 
-            $factory->addWorker(new RoutingWorker($options['prefix']));
-
             /**
              * Cache busting is not included due to buggy implementation in debug mode.
              *
@@ -106,6 +107,9 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
              *     $factory->addWorker(new CacheBustingWorker());
              * }
              */
+
+            // routing worker is required for translating path
+            $factory->addWorker(new RoutingWorker($options['prefix']));
 
             return $factory;
         });
@@ -120,6 +124,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
             return $manager;
         };
 
+        // filter factory dependency injection
         $app['assetic.filter_factory.class'] = 'Lokhman\Silex\Provider\Assetic\FilterFactory';
 
         $app['assetic.filter_factory'] = $app->factory(function() use ($app) {
@@ -144,18 +149,35 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
             }
         };
 
+        $app['assetic.normalize_path'] = $app->protect(function($asset) use ($app) {
+            // assets work with non absolute paths (should not start with "/")
+            $asset->setTargetPath(ltrim($asset->getTargetPath(), '/'));
+
+            // normalize paths in collections
+            if ($asset instanceof AssetCollection) {
+                foreach ($asset as $leaf) {
+                    $app['assetic.normalize_path']($leaf);
+                }
+            }
+        });
+
         $app['assetic.output'] = $app->protect(function($asset, $write, callable $callback = null) use ($app) {
+            $app['assetic.normalize_path']($asset);
+
             if ($write) {
+                // write asset to file system
                 $app['assetic.writer']->writeAsset($asset);
 
                 if ($callback !== null) {
                     $callback($asset);
                 }
             } else {
+                // use asset cache if enabled
                 if (null !== $cache = $app['assetic.cache']) {
                     $asset = new AssetCache($asset, $cache);
                 }
 
+                // emulate asset delivery with Silex routing
                 $app['controllers']->get($asset->getTargetPath(), function() use ($asset) {
                     $mimeType = MimeTypeGuesser::getInstance()->guess($asset->getTargetPath());
                     return new Response($asset->dump(), 200, ['Content-Type' => $mimeType]);
@@ -175,6 +197,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
                         continue;
                     }
 
+                    // search for *.twig files and add them as resources
                     foreach (Finder::create()->files()->name('*.twig')->in($paths) as $fileInfo) {
                         $name = '@' . $namespace . '/' . $fileInfo->getRelativePathname();
                         $manager->addResource(new TwigResource($loader, $name), 'twig');
@@ -193,7 +216,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
 
                 if ($formula[2]['combine'] || !$debug) {
                     $output($asset, $write, $callback);
-                } else {
+                } elseif ($asset instanceof AssetCollection) {
                     foreach ($asset as $leaf) {
                         $output($leaf, $write, $callback);
                     }
@@ -202,6 +225,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
         });
 
         if (isset($app['twig'])) {
+            // register Assetic Twig extension
             $app->extend('twig', function($twig) use ($app) {
                 $twig->addExtension(new AsseticExtension($app['assetic'], $app['assetic.options']['twig_functions']));
                 return $twig;
