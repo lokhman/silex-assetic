@@ -93,6 +93,10 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
 
             // set static assets from configuration
             foreach ($options['assets'] as $name => $formula) {
+                if (!is_array($formula)) {
+                    $formula = ['inputs' => $formula];
+                }
+
                 $manager->set($name, $factory->createAsset(
                     isset($formula['inputs']) ? $formula['inputs'] : [],
                     isset($formula['filters']) ? $formula['filters'] : [],
