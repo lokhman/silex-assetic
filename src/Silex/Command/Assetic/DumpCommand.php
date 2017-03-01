@@ -29,6 +29,7 @@
 namespace Lokhman\Silex\Command\Assetic;
 
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Assetic\Asset\AssetCollectionInterface;
@@ -49,7 +50,8 @@ class DumpCommand extends Command {
     protected function configure() {
         $this
             ->setName('assetic:dump')
-            ->setDescription('Dumps all assets to the filesystem');
+            ->setDescription('Dumps all assets to the filesystem')
+            ->addOption('no-debug', null, InputOption::VALUE_NONE, 'Switch debug mode off');
     }
 
     /**
@@ -59,13 +61,17 @@ class DumpCommand extends Command {
         $app = $this->getApplication()->getContainer();
 
         $verbose = function($asset) use ($output) {
-            $output->writeln(sprintf('<fg=cyan>%s/%s</>', $asset->getSourceRoot() ?: '[unknown root]',
+            $output->writeln(sprintf('<fg=cyan>%s/%s</>', $asset->getSourceRoot() ? : '[unknown root]',
                 $asset->getSourcePath() ?: '[unknown path]'));
         };
 
         $assetic = $app['assetic'];
         if (false === $dir = realpath($app['assetic.options']['output_dir'])) {
             $dir = $app['assetic.options']['output_dir'];
+        }
+
+        if ($input->hasOption('no-debug')) {
+            $assetic->setDebug(false);
         }
 
         $output->writeln(sprintf('Dumping all assets to <comment>%s</comment>.', $dir));
