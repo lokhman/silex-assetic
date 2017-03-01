@@ -26,7 +26,7 @@
  * SOFTWARE.
  */
 
-namespace Lokhman\Silex\Command;
+namespace Lokhman\Silex\Command\Assetic;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
