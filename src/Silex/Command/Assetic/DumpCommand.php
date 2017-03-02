@@ -32,6 +32,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Command\LockableTrait;
 use Assetic\Asset\AssetCollectionInterface;
 use Assetic\Asset\AssetInterface;
 use Assetic\Util\VarUtils;
@@ -43,6 +44,8 @@ use Assetic\Util\VarUtils;
  * @link https://github.com/lokhman/silex-assetic
  */
 class DumpCommand extends Command {
+
+    use LockableTrait;
 
     /**
      * {@inheritdoc}
@@ -58,6 +61,12 @@ class DumpCommand extends Command {
      * {@inheritdoc}
      */
     protected function execute(InputInterface $input, OutputInterface $output) {
+        if (!$this->lock()) {
+            $output->writeln('<error>The command is already running in another process.</error>');
+
+            return 0;
+        }
+
         $app = $this->getApplication()->getContainer();
 
         $verbose = function($asset) use ($output) {
@@ -70,7 +79,7 @@ class DumpCommand extends Command {
             $dir = $app['assetic.options']['output_dir'];
         }
 
-        if ($input->hasOption('no-debug')) {
+        if ($input->getOption('no-debug')) {
             $assetic->setDebug(false);
         }
 
