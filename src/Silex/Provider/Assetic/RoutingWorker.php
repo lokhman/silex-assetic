@@ -3,6 +3,7 @@
  * Tools for Silex 2+ framework.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-tools
  *
  * Copyright (c) 2016 Alexander Lokhman <alex.lokhman@gmail.com>
@@ -28,29 +29,32 @@
 
 namespace Lokhman\Silex\Provider\Assetic;
 
-use Assetic\Factory\Worker\WorkerInterface;
 use Assetic\Asset\AssetInterface;
 use Assetic\Factory\AssetFactory;
+use Assetic\Factory\Worker\WorkerInterface;
 
 /**
  * Routing Worker for Assetic Factory.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-assetic
  */
-class RoutingWorker implements WorkerInterface {
-
+class RoutingWorker implements WorkerInterface
+{
     protected $prefix;
 
-    public function __construct($prefix = '/') {
-        $prefix = rtrim(trim($prefix), '/') . '/';
-        $this->prefix = '/' . ltrim($prefix, '/');
+    public function __construct($prefix = '/')
+    {
+        $prefix = rtrim(trim($prefix), '/').'/';
+        $this->prefix = '/'.ltrim($prefix, '/');
     }
 
     /**
      * {@inheritdoc}
      */
-    public function process(AssetInterface $asset, AssetFactory $factory) {
+    public function process(AssetInterface $asset, AssetFactory $factory)
+    {
         if (!$path = $asset->getTargetPath()) {
             return /* no path to work with */;
         }
@@ -59,7 +63,6 @@ class RoutingWorker implements WorkerInterface {
             return /* already replaced */;
         }
 
-        $asset->setTargetPath($this->prefix . ltrim($path, '/'));
+        $asset->setTargetPath($this->prefix.ltrim($path, '/'));
     }
-
 }

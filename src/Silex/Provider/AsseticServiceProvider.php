@@ -3,6 +3,7 @@
  * Tools for Silex 2+ framework.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-tools
  *
  * Copyright (c) 2016 Alexander Lokhman <alex.lokhman@gmail.com>
@@ -28,58 +29,60 @@
 
 namespace Lokhman\Silex\Provider;
 
+use Assetic\Asset\AssetCache;
+use Assetic\Asset\AssetCollection;
+use Assetic\AssetManager;
+use Assetic\AssetWriter;
+use Assetic\Cache\FilesystemCache;
+use Assetic\Extension\Twig\AsseticExtension;
+use Assetic\Extension\Twig\TwigFormulaLoader;
+use Assetic\Extension\Twig\TwigResource;
+use Assetic\Factory\AssetFactory;
+use Assetic\Factory\LazyAssetManager;
+use Assetic\FilterManager;
+use Lokhman\Silex\Provider\Assetic\MimeTypeGuesser;
+use Lokhman\Silex\Provider\Assetic\RoutingWorker;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Silex\Api\BootableProviderInterface;
 use Silex\Application;
-use Assetic\AssetWriter;
-use Assetic\AssetManager;
-use Assetic\FilterManager;
-use Assetic\Factory\AssetFactory;
-use Assetic\Factory\LazyAssetManager;
-use Assetic\Extension\Twig\AsseticExtension;
-use Assetic\Extension\Twig\TwigFormulaLoader;
-use Assetic\Extension\Twig\TwigResource;
-use Assetic\Asset\AssetCache;
-use Assetic\Asset\AssetCollection;
-use Assetic\Cache\FilesystemCache;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpFoundation\Response;
-use Lokhman\Silex\Provider\Assetic\RoutingWorker;
-use Lokhman\Silex\Provider\Assetic\MimeTypeGuesser;
 
 /**
  * Silex service provider for Assetic library.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-assetic
  */
-class AsseticServiceProvider implements ServiceProviderInterface, BootableProviderInterface {
-
+class AsseticServiceProvider implements ServiceProviderInterface, BootableProviderInterface
+{
     /**
      * {@inheritdoc}
      */
-    public function register(Container $app) {
+    public function register(Container $app)
+    {
         $app['assetic.options'] = [];
         $app['assetic.options.default'] = [
-            'prefix' => '/',
-            'input_dir' => '',
-            'output_dir' => '',
-            'cache_dir' => null,
+            'prefix'         => '/',
+            'input_dir'      => '',
+            'output_dir'     => '',
+            'cache_dir'      => null,
             'twig_functions' => [],
-            'java' => '/usr/bin/java',
-            'ruby' => '/usr/bin/ruby',
-            'node' => '/usr/bin/node',
-            'node_paths' => [],
-            'filters' => [],
-            'assets' => [],
+            'java'           => '/usr/bin/java',
+            'ruby'           => '/usr/bin/ruby',
+            'node'           => '/usr/bin/node',
+            'node_paths'     => [],
+            'filters'        => [],
+            'assets'         => [],
         ];
 
-        $app['assetic'] = function() use ($app) {
+        $app['assetic'] = function () use ($app) {
             return $app['assetic.factory'];
         };
 
-        $app['assetic.factory'] = $app->factory(function() use ($app) {
+        $app['assetic.factory'] = $app->factory(function () use ($app) {
             $defaults = $app['assetic.options.default'];
             $options = array_replace($defaults, $app['assetic.options']);
             $app['assetic.options'] = $options;
@@ -104,7 +107,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
                 ));
             }
 
-            /**
+            /*
              * Cache busting is not included due to buggy implementation in debug mode.
              *
              * if ($options['cache_busting']) {
@@ -118,7 +121,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
             return $factory;
         });
 
-        $app['assetic.asset_manager'] = function() use ($app) {
+        $app['assetic.asset_manager'] = function () use ($app) {
             $manager = new LazyAssetManager($app['assetic']);
 
             if (isset($app['twig'])) {
@@ -131,29 +134,30 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
         // filter factory dependency injection
         $app['assetic.filter_factory.class'] = 'Lokhman\Silex\Provider\Assetic\FilterFactory';
 
-        $app['assetic.filter_factory'] = $app->factory(function() use ($app) {
+        $app['assetic.filter_factory'] = $app->factory(function () use ($app) {
             return new $app['assetic.filter_factory.class']($app['assetic.options']);
         });
 
-        $app['assetic.filter_manager'] = function() use ($app) {
+        $app['assetic.filter_manager'] = function () use ($app) {
             $manager = new FilterManager();
             foreach ($app['assetic.options']['filters'] as $name => $options) {
                 $manager->set($name, $app['assetic.filter_factory']->register($name, $options));
             }
+
             return $manager;
         };
 
-        $app['assetic.writer'] = function() use ($app) {
+        $app['assetic.writer'] = function () use ($app) {
             return new AssetWriter($app['assetic.options']['output_dir']);
         };
 
-        $app['assetic.cache'] = function() use ($app) {
+        $app['assetic.cache'] = function () use ($app) {
             if ($app['assetic.options']['cache_dir'] !== null) {
                 return new FilesystemCache($app['assetic.options']['cache_dir']);
             }
         };
 
-        $app['assetic.normalize_path'] = $app->protect(function($asset) use ($app) {
+        $app['assetic.normalize_path'] = $app->protect(function ($asset) use ($app) {
             // assets work with non absolute paths (should not start with "/")
             $asset->setTargetPath(ltrim($asset->getTargetPath(), '/'));
 
@@ -165,7 +169,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
             }
         });
 
-        $app['assetic.output'] = $app->protect(function($asset, $write, callable $callback = null) use ($app) {
+        $app['assetic.output'] = $app->protect(function ($asset, $write, callable $callback = null) use ($app) {
             $app['assetic.normalize_path']($asset);
 
             if ($write) {
@@ -182,14 +186,15 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
                 }
 
                 // emulate asset delivery with Silex routing
-                $app['controllers']->get($asset->getTargetPath(), function() use ($asset) {
+                $app['controllers']->get($asset->getTargetPath(), function () use ($asset) {
                     $mimeType = MimeTypeGuesser::getInstance()->guess($asset->getTargetPath());
+
                     return new Response($asset->dump(), 200, ['Content-Type' => $mimeType]);
                 });
             }
         });
 
-        $app['assetic.dump'] = $app->protect(function($write, callable $callback = null) use ($app) {
+        $app['assetic.dump'] = $app->protect(function ($write, callable $callback = null) use ($app) {
             $manager = $app['assetic.asset_manager'];
             $output = $app['assetic.output'];
 
@@ -203,7 +208,7 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
 
                     // search for *.twig files and add them as resources
                     foreach (Finder::create()->files()->name('*.twig')->in($paths) as $fileInfo) {
-                        $name = '@' . $namespace . '/' . $fileInfo->getRelativePathname();
+                        $name = '@'.$namespace.'/'.$fileInfo->getRelativePathname();
                         $manager->addResource(new TwigResource($loader, $name), 'twig');
                     }
                 }
@@ -230,8 +235,9 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
 
         if (isset($app['twig'])) {
             // register Assetic Twig extension
-            $app->extend('twig', function($twig) use ($app) {
+            $app->extend('twig', function ($twig) use ($app) {
                 $twig->addExtension(new AsseticExtension($app['assetic'], $app['assetic.options']['twig_functions']));
+
                 return $twig;
             });
         }
@@ -240,10 +246,10 @@ class AsseticServiceProvider implements ServiceProviderInterface, BootableProvid
     /**
      * {@inheritdoc}
      */
-    public function boot(Application $app) {
+    public function boot(Application $app)
+    {
         if ($app['debug']) {
             $app['assetic.dump'](false);
         }
     }
-
 }

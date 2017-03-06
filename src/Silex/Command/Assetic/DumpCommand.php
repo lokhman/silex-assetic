@@ -3,6 +3,7 @@
  * Tools for Silex 2+ framework.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-tools
  *
  * Copyright (c) 2016 Alexander Lokhman <alex.lokhman@gmail.com>
@@ -28,29 +29,31 @@
 
 namespace Lokhman\Silex\Command\Assetic;
 
-use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Command\LockableTrait;
 use Assetic\Asset\AssetCollectionInterface;
 use Assetic\Asset\AssetInterface;
 use Assetic\Util\VarUtils;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Command\LockableTrait;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Dump command for Assetic library.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-assetic
  */
-class DumpCommand extends Command {
-
+class DumpCommand extends Command
+{
     use LockableTrait;
 
     /**
      * {@inheritdoc}
      */
-    protected function configure() {
+    protected function configure()
+    {
         $this
             ->setName('assetic:dump')
             ->setDescription('Dumps all assets to the filesystem')
@@ -60,7 +63,8 @@ class DumpCommand extends Command {
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output) {
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
         if (!$this->lock()) {
             $output->writeln('<error>The command is already running in another process.</error>');
 
@@ -69,8 +73,8 @@ class DumpCommand extends Command {
 
         $app = $this->getApplication()->getContainer();
 
-        $verbose = function($asset) use ($output) {
-            $output->writeln(sprintf('<fg=cyan>%s/%s</>', $asset->getSourceRoot() ? : '[unknown root]',
+        $verbose = function ($asset) use ($output) {
+            $output->writeln(sprintf('<fg=cyan>%s/%s</>', $asset->getSourceRoot() ?: '[unknown root]',
                 $asset->getSourcePath() ?: '[unknown path]'));
         };
 
@@ -84,9 +88,9 @@ class DumpCommand extends Command {
         }
 
         $output->writeln(sprintf('Dumping all assets to <comment>%s</comment>.', $dir));
-        $output->writeln(sprintf('Debug mode is <comment>%s</comment>.' . PHP_EOL, $assetic->isDebug() ? 'on' : 'off'));
+        $output->writeln(sprintf('Debug mode is <comment>%s</comment>.'.PHP_EOL, $assetic->isDebug() ? 'on' : 'off'));
 
-        $app['assetic.dump'](true, function(AssetInterface $asset) use ($output, $verbose) {
+        $app['assetic.dump'](true, function (AssetInterface $asset) use ($output, $verbose) {
             $path = VarUtils::resolve($asset->getTargetPath(), $asset->getVars(), $asset->getValues());
             $output->writeln(sprintf('<comment>%s</comment> <info>[file+]</info> %s', date('H:i:s'), $path));
 
@@ -101,5 +105,4 @@ class DumpCommand extends Command {
             }
         });
     }
-
 }

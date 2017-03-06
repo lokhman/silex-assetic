@@ -4,6 +4,7 @@
  * Tools for Silex 2+ framework.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-tools
  *
  * Copyright (c) 2016 Alexander Lokhman <alex.lokhman@gmail.com>
@@ -35,10 +36,11 @@ use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeExtensionGuesser;
  * MIME type guesser for Assetic library.
  *
  * @author Alexander Lokhman <alex.lokhman@gmail.com>
+ *
  * @link https://github.com/lokhman/silex-assetic
  */
-class MimeTypeGuesser extends MimeTypeExtensionGuesser {
-
+class MimeTypeGuesser extends MimeTypeExtensionGuesser
+{
     /**
      * The singleton instance.
      *
@@ -51,7 +53,8 @@ class MimeTypeGuesser extends MimeTypeExtensionGuesser {
      *
      * @return self
      */
-    public static function getInstance() {
+    public static function getInstance()
+    {
         if (null === self::$instance) {
             self::$instance = new self();
         }
@@ -62,24 +65,26 @@ class MimeTypeGuesser extends MimeTypeExtensionGuesser {
     /**
      * Resets the singleton instance.
      */
-    public static function reset() {
+    public static function reset()
+    {
         self::$instance = null;
     }
 
     /**
      * Flips extensions to speed up the lookup.
      */
-    private function __construct() {
+    private function __construct()
+    {
         $this->defaultExtensions = array_flip($this->defaultExtensions);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function guess($path) {
+    public function guess($path)
+    {
         $extension = pathinfo($path, PATHINFO_EXTENSION);
 
         return isset($this->defaultExtensions[$extension]) ? $this->defaultExtensions[$extension] : null;
     }
-
 }
