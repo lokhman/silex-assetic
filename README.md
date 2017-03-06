@@ -1,4 +1,7 @@
 # silex-assetic
+
+[![StyleCI](https://styleci.io/repos/81963711/shield?branch=master)](https://styleci.io/repos/81963711)
+
 Service provider to support [Assetic](https://github.com/kriswallsmith/assetic) library for
 [**Silex 2.0+**](http://silex.sensiolabs.org/) micro-framework.
 
