@@ -59,7 +59,7 @@ You can use console command with [`silex-console`](https://github.com/lokhman/si
 adding `DumpCommand` to the console application.
 
     use Lokhman\Silex\Console\Console;
-    use Lokhman\Silex\Console\Command\DumpCommand;
+    use Lokhman\Silex\Console\Command\Assetic\DumpCommand;
 
     $console = new Console($app);
     $console->add(new DumpCommand());
