@@ -27,7 +27,7 @@
  * SOFTWARE.
  */
 
-namespace Lokhman\Silex\Command\Assetic;
+namespace Lokhman\Silex\Console\Command\Assetic;
 
 use Assetic\Asset\AssetCollectionInterface;
 use Assetic\Asset\AssetInterface;
